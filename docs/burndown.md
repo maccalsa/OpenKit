@@ -7,19 +7,19 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 - [x] Create project scaffold
 - [x] Add CLI entrypoint
 - [x] Add YAML config loading
-- [ ] Add URL/spec fetcher
-- [ ] Add Swagger UI discovery for common cases
-- [ ] Add OpenAPI parser
-- [ ] Add internal model for APIs/endpoints
-- [ ] Add auth scheme extraction
+- [x] Add URL/spec fetcher
+- [x] Add Swagger UI discovery for common cases
+- [x] Add OpenAPI parser
+- [x] Add internal model for APIs/endpoints
+- [x] Add auth scheme extraction
 - [ ] Add IntelliJ `.http` generator
 - [ ] Add IntelliJ environment generator
 - [ ] Add Postman collection generator
 - [ ] Add Postman environment generator
 - [ ] Add generated README output
 - [ ] Add sample `apipack.yml`
-- [ ] Add sample OpenAPI fixture
-- [ ] Add unit tests for parser
+- [x] Add sample OpenAPI fixture
+- [x] Add unit tests for parser
 - [ ] Add unit tests for generators
 - [ ] Add smoke test for full generation
 - [ ] Add project README
@@ -30,5 +30,10 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 
 ### Slice 1 - Scaffold + CLI skeleton
 
-- Status: In progress
+- Status: Done
 - Goal: Run `apipack generate --config ... --out ...` and generate a baseline README from YAML config.
+
+### Slice 2 - Spec discovery and parse model
+
+- Status: In progress
+- Goal: Discover OpenAPI URLs from Swagger UI links, parse OpenAPI 3.x docs into internal endpoint/auth model, and cover with parser/discovery tests.
