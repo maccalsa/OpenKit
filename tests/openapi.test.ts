@@ -1,13 +1,22 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { discoverSpecUrl, parseOpenApiDocument } from "../src/openapi.js";
+import { discoverSpecUrl, fetchSpecDocument, parseOpenApiDocument } from "../src/openapi.js";
 
 function createJsonResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), {
     status: 200,
     headers: {
       "content-type": "application/json"
+    }
+  });
+}
+
+function createYamlResponse(payload: string): Response {
+  return new Response(payload, {
+    status: 200,
+    headers: {
+      "content-type": "application/yaml"
     }
   });
 }
@@ -97,5 +106,39 @@ describe("parseOpenApiDocument", () => {
         required: true
       }
     ]);
+  });
+});
+
+describe("fetchSpecDocument", () => {
+  it("parses YAML OpenAPI responses", async () => {
+    const fetchMock = async () =>
+      createYamlResponse(
+        [
+          "openapi: 3.0.3",
+          "info:",
+          "  title: YAML API",
+          "paths:",
+          "  /ping:",
+          "    get:",
+          "      operationId: ping"
+        ].join("\n")
+      );
+
+    const document = await fetchSpecDocument("https://yaml.example.com/openapi.yaml", fetchMock);
+    expect((document as Record<string, unknown>).openapi).toBe("3.0.3");
+  });
+
+  it("parses JSON OpenAPI responses", async () => {
+    const fetchMock = async () =>
+      createJsonResponse({
+        openapi: "3.0.3",
+        info: {
+          title: "JSON API"
+        },
+        paths: {}
+      });
+
+    const document = await fetchSpecDocument("https://json.example.com/openapi.json", fetchMock);
+    expect((document as Record<string, unknown>).openapi).toBe("3.0.3");
   });
 });

@@ -1,4 +1,5 @@
 import { ApiModel, ApiParameter, AuthScheme, HttpMethod } from "./types.js";
+import { parse as parseYaml } from "yaml";
 
 const HTTP_METHODS: HttpMethod[] = ["get", "post", "put", "patch", "delete", "head", "options"];
 
@@ -77,10 +78,22 @@ export async function fetchSpecDocument(specUrl: string, fetchFn: FetchFn = fetc
   }
 
   const text = await response.text();
+  if (
+    contentType.includes("application/yaml") ||
+    contentType.includes("text/yaml") ||
+    contentType.includes("application/x-yaml")
+  ) {
+    return parseYaml(text);
+  }
+
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Unsupported spec format at ${specUrl}. Expected JSON for MVP.`);
+    try {
+      return parseYaml(text);
+    } catch {
+      throw new Error(`Unsupported spec format at ${specUrl}. Expected JSON or YAML.`);
+    }
   }
 }
 

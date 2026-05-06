@@ -10,6 +10,7 @@ import {
 } from "./generators.js";
 import { discoverSpecUrl, fetchSpecDocument, parseOpenApiDocument } from "./openapi.js";
 import { ApiModel } from "./types.js";
+import { parse as parseYaml } from "yaml";
 
 async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnType<typeof loadConfig>>; models: ApiModel[] }> {
   const config = await loadConfig(configPath);
@@ -24,7 +25,11 @@ async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnT
     } else {
       const fixturePath = path.resolve(configDirectory, source.url);
       const fixtureText = await readFile(fixturePath, "utf-8");
-      rawSpec = JSON.parse(fixtureText);
+      try {
+        rawSpec = JSON.parse(fixtureText);
+      } catch {
+        rawSpec = parseYaml(fixtureText);
+      }
     }
 
     const parsed = parseOpenApiDocument(rawSpec, source.name);

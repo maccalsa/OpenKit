@@ -23,9 +23,9 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 - [ ] Add unit tests for generators
 - [x] Add unit tests for generators
 - [x] Add smoke test for full generation
-- [ ] Add project README
-- [ ] Run full test/build
-- [ ] Commit complete MVP
+- [x] Add project README
+- [x] Run full test/build
+- [x] Commit complete MVP
 
 ## Slice Log
 
@@ -41,5 +41,10 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 
 ### Slice 3 - End-to-end generation
 
-- Status: In progress
+- Status: Done
 - Goal: Generate IntelliJ/Postman output bundles with tests and smoke verification.
+
+### Slice 4 - Finalization + verification
+
+- Status: Done
+- Goal: Add project documentation, close remaining requirement gaps, and run final full verification.
