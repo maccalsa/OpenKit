@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const sourceSchema = z.object({
   name: z.string().min(1),
-  url: z.string().url()
+  url: z.string().min(1)
 });
 
 const environmentSchema = z.record(z.string(), z.string());
