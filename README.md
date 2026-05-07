@@ -40,24 +40,15 @@ Use a JSON file:
 ```json
 {
   "workspace": "internal-apis",
-  "defaultEnvironment": "dev",
-  "variables": {
-    "env": ["dev", "preprod", "prod"]
-  },
+  "defaultEnv": "dev",
+  "envs": ["dev", "preprod", "prod"],
   "sources": [
     {
       "name": "users",
       "specUrl": "https://users.example.com/swagger-ui/index.html",
-      "baseUrlTemplate": "https://{{env}}-users.example.com",
-      "authProfile": "bearer"
+      "baseUrlTemplate": "https://{{env}}-users.example.com"
     }
-  ],
-  "authProfiles": {
-    "bearer": {
-      "type": "bearer",
-      "tokenVariable": "token"
-    }
-  }
+  ]
 }
 ```
 

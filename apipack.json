@@ -1,21 +1,12 @@
 {
   "workspace": "internal-apis",
-  "defaultEnvironment": "dev",
-  "variables": {
-    "env": ["dev", "preprod", "prod"]
-  },
+  "defaultEnv": "dev",
+  "envs": ["dev", "preprod", "prod"],
   "sources": [
     {
       "name": "users",
       "specUrl": "./fixtures/users.openapi.json",
-      "baseUrlTemplate": "https://{{env}}-users.example.com",
-      "authProfile": "bearer"
+      "baseUrlTemplate": "https://{{env}}-users.example.com"
     }
-  ],
-  "authProfiles": {
-    "bearer": {
-      "type": "bearer",
-      "tokenVariable": "token"
-    }
-  }
+  ]
 }

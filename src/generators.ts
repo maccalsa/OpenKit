@@ -30,37 +30,7 @@ function buildRequestUrl(endpoint: ApiEndpoint, source: ApiSource): string {
   return `{{${baseKey}}}${pathValue}${querySuffix}`;
 }
 
-function authHeadersFromProfile(source: ApiSource, config: ApiPackConfig): string[] | null {
-  if (!source.authProfile) {
-    return null;
-  }
-
-  const profile = config.authProfiles[source.authProfile];
-  if (!profile) {
-    return ["# TODO: configure auth profile in apipack.json"];
-  }
-
-  switch (profile.type) {
-    case "bearer":
-      return [`Authorization: Bearer {{${profile.tokenVariable ?? "token"}}}`];
-    case "apiKey":
-      return [`${profile.headerName ?? "X-API-Key"}: {{${profile.apiKeyVariable ?? "apiKey"}}}`];
-    case "basic":
-      return ["Authorization: Basic {{basicAuthToken}}"];
-    case "oauth":
-    case "custom":
-      return ["# TODO: configure OAuth/custom auth header"];
-    default:
-      return ["# TODO: configure auth header"];
-  }
-}
-
-function buildAuthHeaders(endpoint: ApiEndpoint, source: ApiSource, config: ApiPackConfig): string[] {
-  const profileHeaders = authHeadersFromProfile(source, config);
-  if (profileHeaders) {
-    return profileHeaders;
-  }
-
+function buildAuthHeaders(endpoint: ApiEndpoint): string[] {
   if (endpoint.authSchemes.length === 0) {
     return [];
   }
@@ -81,14 +51,14 @@ function buildAuthHeaders(endpoint: ApiEndpoint, source: ApiSource, config: ApiP
   return ["# TODO: configure auth header"];
 }
 
-export function generateIntellijHttp(model: ApiModel, source: ApiSource, config: ApiPackConfig): string {
+export function generateIntellijHttp(model: ApiModel, source: ApiSource): string {
   const lines: string[] = [];
   for (const endpoint of model.endpoints) {
     const title = endpoint.summary ?? endpoint.operationId ?? `${endpoint.method.toUpperCase()} ${endpoint.path}`;
     lines.push(`### ${title}`);
     lines.push(`${endpoint.method.toUpperCase()} ${buildRequestUrl(endpoint, source)}`);
     lines.push("Accept: application/json");
-    lines.push(...buildAuthHeaders(endpoint, source, config));
+    lines.push(...buildAuthHeaders(endpoint));
 
     if (endpoint.requestBodyExample !== undefined) {
       lines.push("Content-Type: application/json");
@@ -108,13 +78,13 @@ function interpolateTemplate(template: string, context: Record<string, string>):
     .replace(/\{(\w+)\}/g, (_, variableName: string) => context[variableName] ?? "");
 }
 
+function resolveSourceBaseUrl(source: ApiSource, context: Record<string, string>): string {
+  return interpolateTemplate(source.baseUrlTemplate, context);
+}
+
 function buildEnvironmentContexts(config: ApiPackConfig): Array<{ name: string; values: Record<string, string> }> {
-  const envValues = config.variables.env ?? [config.defaultEnvironment];
-  return envValues.map((environmentName) => {
+  return config.envs.map((environmentName) => {
     const values: Record<string, string> = { env: environmentName };
-    for (const [variableName, options] of Object.entries(config.variables)) {
-      values[variableName] = variableName === "env" ? environmentName : options[0];
-    }
     return {
       name: environmentName,
       values
@@ -122,30 +92,37 @@ function buildEnvironmentContexts(config: ApiPackConfig): Array<{ name: string; 
   });
 }
 
-function collectAuthVariableNames(config: ApiPackConfig): string[] {
-  const variableNames = new Set<string>();
-  for (const profile of Object.values(config.authProfiles)) {
-    if (profile.type === "bearer") {
-      variableNames.add(profile.tokenVariable ?? "token");
-    } else if (profile.type === "apiKey") {
-      variableNames.add(profile.apiKeyVariable ?? "apiKey");
-    } else if (profile.type === "basic") {
-      variableNames.add(profile.usernameVariable ?? "username");
-      variableNames.add(profile.passwordVariable ?? "password");
-      variableNames.add("basicAuthToken");
+function deriveAuthVariables(models: ApiModel[]): PostmanVariable[] {
+  const authKinds = new Set<string>();
+  for (const model of models) {
+    for (const scheme of model.authSchemes) {
+      authKinds.add(`${scheme.type}:${scheme.scheme ?? "none"}`);
     }
   }
-  return [...variableNames];
+
+  const variables: PostmanVariable[] = [];
+  for (const authKind of authKinds) {
+    if (authKind.includes("http:bearer")) {
+      variables.push({ key: "token", value: "", type: "string" });
+    } else if (authKind.includes("apiKey")) {
+      variables.push({ key: "apiKey", value: "", type: "string" });
+    } else if (authKind.includes("http:basic")) {
+      variables.push({ key: "username", value: "", type: "string" });
+      variables.push({ key: "password", value: "", type: "string" });
+      variables.push({ key: "basicAuthToken", value: "", type: "string" });
+    }
+  }
+  return variables;
 }
 
-export function generateIntellijEnvironment(config: ApiPackConfig): string {
+export function generateIntellijEnvironment(config: ApiPackConfig, models: ApiModel[]): string {
   const envObject: Record<string, Record<string, string>> = {};
-  const authVariables = collectAuthVariableNames(config);
+  const authVariables = deriveAuthVariables(models).map((variable) => variable.key);
 
   for (const context of buildEnvironmentContexts(config)) {
     const environmentValues: Record<string, string> = { ...context.values };
     for (const source of config.sources) {
-      environmentValues[toEnvironmentKey(source.name)] = interpolateTemplate(source.baseUrlTemplate, context.values);
+      environmentValues[toEnvironmentKey(source.name)] = resolveSourceBaseUrl(source, context.values);
     }
     for (const authVariable of authVariables) {
       environmentValues[authVariable] = "";
@@ -155,7 +132,7 @@ export function generateIntellijEnvironment(config: ApiPackConfig): string {
   return `${JSON.stringify(envObject, null, 2)}\n`;
 }
 
-function toPostmanItems(model: ApiModel, source: ApiSource, config: ApiPackConfig) {
+function toPostmanItems(model: ApiModel, source: ApiSource) {
   return model.endpoints.map((endpoint) => {
     const urlRaw = buildRequestUrl(endpoint, source);
     const header = [
@@ -163,7 +140,7 @@ function toPostmanItems(model: ApiModel, source: ApiSource, config: ApiPackConfi
         key: "Accept",
         value: "application/json"
       },
-      ...buildAuthHeaders(endpoint, source, config).map((line) => {
+      ...buildAuthHeaders(endpoint).map((line) => {
         const [key, ...rest] = line.split(":");
         return {
           key: key.trim(),
@@ -197,47 +174,15 @@ function toPostmanItems(model: ApiModel, source: ApiSource, config: ApiPackConfi
   });
 }
 
-export function generatePostmanCollection(model: ApiModel, source: ApiSource, config: ApiPackConfig): string {
+export function generatePostmanCollection(model: ApiModel, source: ApiSource): string {
   const collection = {
     info: {
       name: sanitizeName(model.title) || model.sourceName,
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
-    item: toPostmanItems(model, source, config)
+    item: toPostmanItems(model, source)
   };
   return `${JSON.stringify(collection, null, 2)}\n`;
-}
-
-function deriveAuthVariables(config: ApiPackConfig, models: ApiModel[]): PostmanVariable[] {
-  const variables: PostmanVariable[] = [];
-  const profileAuthVariables = collectAuthVariableNames(config);
-  for (const variableName of profileAuthVariables) {
-    variables.push({ key: variableName, value: "", type: "string" });
-  }
-
-  if (profileAuthVariables.length > 0) {
-    return variables;
-  }
-
-  const authKinds = new Set<string>();
-  for (const model of models) {
-    for (const scheme of model.authSchemes) {
-      authKinds.add(`${scheme.type}:${scheme.scheme ?? "none"}`);
-    }
-  }
-
-  for (const authKind of authKinds) {
-    if (authKind.includes("http:bearer")) {
-      variables.push({ key: "token", value: "", type: "string" });
-    } else if (authKind.includes("apiKey")) {
-      variables.push({ key: "apiKey", value: "", type: "string" });
-    } else if (authKind.includes("http:basic")) {
-      variables.push({ key: "username", value: "", type: "string" });
-      variables.push({ key: "password", value: "", type: "string" });
-      variables.push({ key: "basicAuthToken", value: "", type: "string" });
-    }
-  }
-  return variables;
 }
 
 export function generatePostmanEnvironment(config: ApiPackConfig, models: ApiModel[]): string {
@@ -245,9 +190,9 @@ export function generatePostmanEnvironment(config: ApiPackConfig, models: ApiMod
   const values: PostmanVariable[] = [];
   const contexts = buildEnvironmentContexts(config);
   const defaultContext =
-    contexts.find((context) => context.name === config.defaultEnvironment) ??
+    contexts.find((context) => context.name === config.defaultEnv) ??
     contexts[0] ?? {
-      name: config.defaultEnvironment,
+      name: config.defaultEnv,
       values: {}
     };
 
@@ -262,12 +207,12 @@ export function generatePostmanEnvironment(config: ApiPackConfig, models: ApiMod
   for (const source of config.sources) {
     values.push({
       key: toEnvironmentKey(source.name),
-      value: interpolateTemplate(source.baseUrlTemplate, defaultContext.values),
+      value: resolveSourceBaseUrl(source, defaultContext.values),
       type: "string"
     });
   }
 
-  values.push(...deriveAuthVariables(config, models));
+  values.push(...deriveAuthVariables(models));
 
   const environment = {
     name: environmentName,

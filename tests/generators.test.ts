@@ -11,24 +11,15 @@ import { ApiModel } from "../src/types.js";
 
 const config: ApiPackConfig = {
   workspace: "internal-apis",
-  defaultEnvironment: "dev",
-  variables: {
-    env: ["dev", "preprod", "prod"]
-  },
+  defaultEnv: "dev",
+  envs: ["dev", "preprod", "prod"],
   sources: [
     {
       name: "users",
       specUrl: "https://users.example.com/v3/api-docs",
-      baseUrlTemplate: "https://{{env}}-users.example.com",
-      authProfile: "bearer"
+      baseUrlTemplate: "https://{{env}}-users.example.com"
     }
-  ],
-  authProfiles: {
-    bearer: {
-      type: "bearer",
-      tokenVariable: "token"
-    }
-  }
+  ]
 };
 const source: ApiSource = config.sources[0] as ApiSource;
 
@@ -68,20 +59,21 @@ const model: ApiModel = {
 
 describe("generators", () => {
   it("creates IntelliJ HTTP requests with placeholders", () => {
-    const output = generateIntellijHttp(model, source, config);
+    const output = generateIntellijHttp(model, source);
     expect(output).toContain("GET {{usersUrl}}/users/{{id}}?expand={{expand}}");
     expect(output).toContain("Authorization: Bearer {{token}}");
   });
 
   it("creates IntelliJ environment JSON", () => {
-    const output = generateIntellijEnvironment(config);
+    const output = generateIntellijEnvironment(config, [model]);
     expect(output).toContain("\"dev\"");
     expect(output).toContain("\"usersUrl\": \"https://dev-users.example.com\"");
     expect(output).toContain("\"preprod\"");
+    expect(output).toContain("\"usersUrl\": \"https://preprod-users.example.com\"");
   });
 
   it("creates Postman collection JSON", () => {
-    const output = generatePostmanCollection(model, source, config);
+    const output = generatePostmanCollection(model, source);
     expect(output).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
     expect(output).toContain("\"raw\": \"{{usersUrl}}/users/{{id}}?expand={{expand}}\"");
   });
@@ -90,6 +82,8 @@ describe("generators", () => {
     const output = generatePostmanEnvironment(config, [model]);
     expect(output).toContain("\"name\": \"internal-apis.environment\"");
     expect(output).toContain("\"key\": \"token\"");
+    expect(output).toContain("\"key\": \"usersUrl\"");
+    expect(output).toContain("\"value\": \"https://dev-users.example.com\"");
   });
 
   it("creates generated README content", () => {

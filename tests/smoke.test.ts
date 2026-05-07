@@ -18,24 +18,20 @@ describe("generateWorkspace", () => {
       JSON.stringify(
         {
           workspace: "smoke-workspace",
-          defaultEnvironment: "dev",
-          variables: {
-            env: ["dev", "prod"]
-          },
+          defaultEnv: "dev",
+          envs: ["dev", "prod"],
           sources: [
             {
               name: "users",
               specUrl: "./users.openapi.json",
-              baseUrlTemplate: "https://{{env}}-users.example.com",
-              authProfile: "bearer"
+              baseUrlTemplate: "https://{{env}}-users.example.com"
+            },
+            {
+              name: "orders",
+              specUrl: "./users.openapi.json",
+              baseUrlTemplate: "https://{{env}}-orders.example.com"
             }
-          ],
-          authProfiles: {
-            bearer: {
-              type: "bearer",
-              tokenVariable: "token"
-            }
-          }
+          ]
         },
         null,
         2
@@ -50,10 +46,17 @@ describe("generateWorkspace", () => {
     const generatedHttp = await readFile(path.join(outDir, "intellij/users.http"), "utf-8");
     const generatedHttpEnv = await readFile(path.join(outDir, "intellij/http-client.env.json"), "utf-8");
     const generatedPostman = await readFile(path.join(outDir, "postman/users.collection.json"), "utf-8");
+    const generatedPostmanEnvironment = await readFile(
+      path.join(outDir, "postman/smoke-workspace.environment.json"),
+      "utf-8"
+    );
 
     expect(generatedReadme).toContain("# smoke-workspace Generated API Pack");
     expect(generatedHttp).toContain("GET {{usersUrl}}/users");
     expect(generatedHttpEnv).toContain("\"usersUrl\": \"https://dev-users.example.com\"");
+    expect(generatedHttpEnv).toContain("\"ordersUrl\": \"https://dev-orders.example.com\"");
     expect(generatedPostman).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
+    expect(generatedPostmanEnvironment).toContain("\"key\": \"ordersUrl\"");
+    expect(generatedPostmanEnvironment).toContain("\"value\": \"https://dev-orders.example.com\"");
   });
 });

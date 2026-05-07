@@ -23,12 +23,13 @@ async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnT
   const configDirectory = path.dirname(path.resolve(configPath));
 
   for (const source of config.sources) {
+    const sourceSpecUrl = source.specUrl;
     let rawSpec: unknown;
-    if (source.specUrl.startsWith("http://") || source.specUrl.startsWith("https://")) {
-      const discoveredUrl = await discoverSpecUrl(source.specUrl);
+    if (sourceSpecUrl.startsWith("http://") || sourceSpecUrl.startsWith("https://")) {
+      const discoveredUrl = await discoverSpecUrl(sourceSpecUrl);
       rawSpec = await fetchSpecDocument(discoveredUrl);
     } else {
-      const fixturePath = path.resolve(configDirectory, source.specUrl);
+      const fixturePath = path.resolve(configDirectory, sourceSpecUrl);
       const fixtureText = await readFile(fixturePath, "utf-8");
       try {
         rawSpec = JSON.parse(fixtureText);
@@ -58,7 +59,7 @@ export async function generateWorkspace(configPath: string, outputPath: string):
   await mkdir(postmanDir, { recursive: true });
 
   await writeFile(path.join(outputDir, "README.md"), generateBundleReadme(config, models), "utf-8");
-  await writeFile(path.join(intellijDir, "http-client.env.json"), generateIntellijEnvironment(config), "utf-8");
+  await writeFile(path.join(intellijDir, "http-client.env.json"), generateIntellijEnvironment(config, models), "utf-8");
   await writeFile(
     path.join(postmanDir, `${config.workspace}.environment.json`),
     generatePostmanEnvironment(config, models),
@@ -68,12 +69,12 @@ export async function generateWorkspace(configPath: string, outputPath: string):
   for (const pair of pairs) {
     await writeFile(
       path.join(intellijDir, `${pair.model.sourceName}.http`),
-      generateIntellijHttp(pair.model, pair.source, config),
+      generateIntellijHttp(pair.model, pair.source),
       "utf-8"
     );
     await writeFile(
       path.join(postmanDir, `${pair.model.sourceName}.collection.json`),
-      generatePostmanCollection(pair.model, pair.source, config),
+      generatePostmanCollection(pair.model, pair.source),
       "utf-8"
     );
   }
