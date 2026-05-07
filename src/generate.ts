@@ -10,19 +10,25 @@ import {
 } from "./generators.js";
 import { discoverSpecUrl, fetchSpecDocument, parseOpenApiDocument } from "./openapi.js";
 import { ApiModel } from "./types.js";
+import { ApiSource } from "./config.js";
 
-async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnType<typeof loadConfig>>; models: ApiModel[] }> {
+interface SourceModelPair {
+  source: ApiSource;
+  model: ApiModel;
+}
+
+async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnType<typeof loadConfig>>; pairs: SourceModelPair[] }> {
   const config = await loadConfig(configPath);
-  const models: ApiModel[] = [];
+  const pairs: SourceModelPair[] = [];
   const configDirectory = path.dirname(path.resolve(configPath));
 
   for (const source of config.sources) {
     let rawSpec: unknown;
-    if (source.url.startsWith("http://") || source.url.startsWith("https://")) {
-      const discoveredUrl = await discoverSpecUrl(source.url);
+    if (source.specUrl.startsWith("http://") || source.specUrl.startsWith("https://")) {
+      const discoveredUrl = await discoverSpecUrl(source.specUrl);
       rawSpec = await fetchSpecDocument(discoveredUrl);
     } else {
-      const fixturePath = path.resolve(configDirectory, source.url);
+      const fixturePath = path.resolve(configDirectory, source.specUrl);
       const fixtureText = await readFile(fixturePath, "utf-8");
       try {
         rawSpec = JSON.parse(fixtureText);
@@ -32,14 +38,18 @@ async function loadModels(configPath: string): Promise<{ config: Awaited<ReturnT
     }
 
     const parsed = parseOpenApiDocument(rawSpec, source.name);
-    models.push(parsed);
+    pairs.push({
+      source,
+      model: parsed
+    });
   }
 
-  return { config, models };
+  return { config, pairs };
 }
 
 export async function generateWorkspace(configPath: string, outputPath: string): Promise<void> {
-  const { config, models } = await loadModels(configPath);
+  const { config, pairs } = await loadModels(configPath);
+  const models = pairs.map((pair) => pair.model);
   const outputDir = path.resolve(outputPath);
 
   const intellijDir = path.join(outputDir, "intellij");
@@ -55,11 +65,15 @@ export async function generateWorkspace(configPath: string, outputPath: string):
     "utf-8"
   );
 
-  for (const model of models) {
-    await writeFile(path.join(intellijDir, `${model.sourceName}.http`), generateIntellijHttp(model), "utf-8");
+  for (const pair of pairs) {
     await writeFile(
-      path.join(postmanDir, `${model.sourceName}.collection.json`),
-      generatePostmanCollection(model),
+      path.join(intellijDir, `${pair.model.sourceName}.http`),
+      generateIntellijHttp(pair.model, pair.source, config),
+      "utf-8"
+    );
+    await writeFile(
+      path.join(postmanDir, `${pair.model.sourceName}.collection.json`),
+      generatePostmanCollection(pair.model, pair.source, config),
       "utf-8"
     );
   }

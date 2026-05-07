@@ -13,12 +13,17 @@ describe("loadConfig", () => {
       JSON.stringify(
         {
           workspace: "internal-apis",
-          sources: [{ name: "users", url: "https://users.example.com/v3/api-docs" }],
-          environments: {
-            dev: {
-              usersUrl: "https://dev-users.example.com"
+          defaultEnvironment: "dev",
+          variables: {
+            env: ["dev", "prod"]
+          },
+          sources: [
+            {
+              name: "users",
+              specUrl: "https://users.example.com/v3/api-docs",
+              baseUrlTemplate: "https://{{env}}-users.example.com"
             }
-          }
+          ]
         },
         null,
         2
@@ -29,6 +34,7 @@ describe("loadConfig", () => {
     const config = await loadConfig(configPath);
     expect(config.workspace).toBe("internal-apis");
     expect(config.sources).toHaveLength(1);
-    expect(config.environments.dev.usersUrl).toBe("https://dev-users.example.com");
+    expect(config.defaultEnvironment).toBe("dev");
+    expect(config.sources[0]?.baseUrlTemplate).toBe("https://{{env}}-users.example.com");
   });
 });

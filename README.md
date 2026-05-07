@@ -40,21 +40,28 @@ Use a JSON file:
 ```json
 {
   "workspace": "internal-apis",
+  "defaultEnvironment": "dev",
+  "variables": {
+    "env": ["dev", "preprod", "prod"]
+  },
   "sources": [
     {
       "name": "users",
-      "url": "https://users.example.com/swagger-ui/index.html"
+      "specUrl": "https://users.example.com/swagger-ui/index.html",
+      "baseUrlTemplate": "https://{{env}}-users.example.com",
+      "authProfile": "bearer"
     }
   ],
-  "environments": {
-    "local": {
-      "usersUrl": "http://localhost:8080"
+  "authProfiles": {
+    "bearer": {
+      "type": "bearer",
+      "tokenVariable": "token"
     }
   }
 }
 ```
 
-`sources.url` accepts:
+`sources.specUrl` accepts:
 
 - direct OpenAPI JSON URL
 - common Swagger UI URL (OpenKit attempts discovery)

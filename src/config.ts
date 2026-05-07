@@ -4,23 +4,28 @@ import { z } from "zod";
 
 const sourceSchema = z.object({
   name: z.string().min(1),
-  url: z.string().min(1)
+  specUrl: z.string().min(1),
+  baseUrlTemplate: z.string().min(1),
+  authProfile: z.string().optional()
 });
 
-const environmentSchema = z.record(z.string(), z.string());
-
-const authSchema = z
+const authProfileSchema = z
   .object({
-    type: z.string(),
-    tokenVariable: z.string().optional()
+    type: z.enum(["bearer", "apiKey", "basic", "oauth", "custom"]),
+    tokenVariable: z.string().optional(),
+    apiKeyVariable: z.string().optional(),
+    usernameVariable: z.string().optional(),
+    passwordVariable: z.string().optional(),
+    headerName: z.string().optional()
   })
   .passthrough();
 
 const configSchema = z.object({
   workspace: z.string().min(1),
+  defaultEnvironment: z.string().default("default"),
+  variables: z.record(z.string(), z.array(z.string()).nonempty()).default({}),
   sources: z.array(sourceSchema).min(1),
-  environments: z.record(z.string(), environmentSchema).default({}),
-  auth: z.record(z.string(), authSchema).default({})
+  authProfiles: z.record(z.string(), authProfileSchema).default({})
 });
 
 export type ApiPackConfig = z.infer<typeof configSchema>;

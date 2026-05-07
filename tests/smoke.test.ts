@@ -18,10 +18,22 @@ describe("generateWorkspace", () => {
       JSON.stringify(
         {
           workspace: "smoke-workspace",
-          sources: [{ name: "users", url: "./users.openapi.json" }],
-          environments: {
-            local: {
-              usersUrl: "http://localhost:8080"
+          defaultEnvironment: "dev",
+          variables: {
+            env: ["dev", "prod"]
+          },
+          sources: [
+            {
+              name: "users",
+              specUrl: "./users.openapi.json",
+              baseUrlTemplate: "https://{{env}}-users.example.com",
+              authProfile: "bearer"
+            }
+          ],
+          authProfiles: {
+            bearer: {
+              type: "bearer",
+              tokenVariable: "token"
             }
           }
         },
@@ -36,10 +48,12 @@ describe("generateWorkspace", () => {
 
     const generatedReadme = await readFile(path.join(outDir, "README.md"), "utf-8");
     const generatedHttp = await readFile(path.join(outDir, "intellij/users.http"), "utf-8");
+    const generatedHttpEnv = await readFile(path.join(outDir, "intellij/http-client.env.json"), "utf-8");
     const generatedPostman = await readFile(path.join(outDir, "postman/users.collection.json"), "utf-8");
 
     expect(generatedReadme).toContain("# smoke-workspace Generated API Pack");
     expect(generatedHttp).toContain("GET {{usersUrl}}/users");
+    expect(generatedHttpEnv).toContain("\"usersUrl\": \"https://dev-users.example.com\"");
     expect(generatedPostman).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
   });
 });
