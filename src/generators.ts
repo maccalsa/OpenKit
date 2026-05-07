@@ -78,6 +78,12 @@ function interpolateTemplate(template: string, context: Record<string, string>):
     .replace(/\{(\w+)\}/g, (_, variableName: string) => context[variableName] ?? "");
 }
 
+function toPostmanTemplateUrl(template: string): string {
+  const protectedTemplate = template.replace(/\{\{(\w+)\}\}/g, "__OPENKIT_VAR__$1__");
+  const normalizedTemplate = protectedTemplate.replace(/\{(\w+)\}/g, "{{$1}}");
+  return normalizedTemplate.replace(/__OPENKIT_VAR__(\w+)__/g, "{{$1}}");
+}
+
 function resolveSourceBaseUrl(source: ApiSource, context: Record<string, string>): string {
   return interpolateTemplate(source.baseUrlTemplate, context);
 }
@@ -207,7 +213,7 @@ export function generatePostmanEnvironment(config: ApiPackConfig, models: ApiMod
   for (const source of config.sources) {
     values.push({
       key: toEnvironmentKey(source.name),
-      value: resolveSourceBaseUrl(source, defaultContext.values),
+      value: toPostmanTemplateUrl(source.baseUrlTemplate),
       type: "string"
     });
   }

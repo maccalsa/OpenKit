@@ -83,7 +83,7 @@ describe("generators", () => {
     expect(output).toContain("\"name\": \"internal-apis.environment\"");
     expect(output).toContain("\"key\": \"token\"");
     expect(output).toContain("\"key\": \"usersUrl\"");
-    expect(output).toContain("\"value\": \"https://dev-users.example.com\"");
+    expect(output).toContain("\"value\": \"https://{{env}}-users.example.com\"");
   });
 
   it("creates generated README content", () => {

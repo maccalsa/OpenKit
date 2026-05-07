@@ -57,6 +57,6 @@ describe("generateWorkspace", () => {
     expect(generatedHttpEnv).toContain("\"ordersUrl\": \"https://dev-orders.example.com\"");
     expect(generatedPostman).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
     expect(generatedPostmanEnvironment).toContain("\"key\": \"ordersUrl\"");
-    expect(generatedPostmanEnvironment).toContain("\"value\": \"https://dev-orders.example.com\"");
+    expect(generatedPostmanEnvironment).toContain("\"value\": \"https://{{env}}-orders.example.com\"");
   });
 });
