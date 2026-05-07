@@ -1,0 +1,23 @@
+{
+  "workspace": "internal-apis",
+  "sources": [
+    {
+      "name": "users",
+      "url": "./fixtures/users.openapi.json"
+    }
+  ],
+  "environments": {
+    "local": {
+      "usersUrl": "http://localhost:8080"
+    },
+    "dev": {
+      "usersUrl": "https://dev-users.example.com"
+    }
+  },
+  "auth": {
+    "default": {
+      "type": "bearer",
+      "tokenVariable": "token"
+    }
+  }
+}

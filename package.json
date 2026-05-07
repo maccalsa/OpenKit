@@ -25,7 +25,6 @@
   "description": "Generate internal API testing workspaces from OpenAPI specs",
   "dependencies": {
     "commander": "^14.0.3",
-    "yaml": "^2.8.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {

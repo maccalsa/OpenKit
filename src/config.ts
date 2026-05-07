@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 
 const sourceSchema = z.object({
@@ -30,6 +29,11 @@ export type ApiSource = z.infer<typeof sourceSchema>;
 export async function loadConfig(configPath: string): Promise<ApiPackConfig> {
   const absolutePath = path.resolve(configPath);
   const configText = await readFile(absolutePath, "utf-8");
-  const parsed = parseYaml(configText);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(configText);
+  } catch {
+    throw new Error(`Invalid JSON config file: ${absolutePath}`);
+  }
   return configSchema.parse(parsed);
 }

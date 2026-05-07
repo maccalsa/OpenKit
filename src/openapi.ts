@@ -1,5 +1,4 @@
 import { ApiModel, ApiParameter, AuthScheme, HttpMethod } from "./types.js";
-import { parse as parseYaml } from "yaml";
 
 const HTTP_METHODS: HttpMethod[] = ["get", "post", "put", "patch", "delete", "head", "options"];
 
@@ -8,8 +7,6 @@ type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 function isDirectSpecUrl(url: URL): boolean {
   return (
     url.pathname.endsWith(".json") ||
-    url.pathname.endsWith(".yaml") ||
-    url.pathname.endsWith(".yml") ||
     url.pathname.includes("/v3/api-docs") ||
     url.pathname.includes("/openapi")
   );
@@ -78,22 +75,10 @@ export async function fetchSpecDocument(specUrl: string, fetchFn: FetchFn = fetc
   }
 
   const text = await response.text();
-  if (
-    contentType.includes("application/yaml") ||
-    contentType.includes("text/yaml") ||
-    contentType.includes("application/x-yaml")
-  ) {
-    return parseYaml(text);
-  }
-
   try {
     return JSON.parse(text);
   } catch {
-    try {
-      return parseYaml(text);
-    } catch {
-      throw new Error(`Unsupported spec format at ${specUrl}. Expected JSON or YAML.`);
-    }
+    throw new Error(`Unsupported spec format at ${specUrl}. Expected JSON.`);
   }
 }
 

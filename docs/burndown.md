@@ -6,7 +6,7 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 
 - [x] Create project scaffold
 - [x] Add CLI entrypoint
-- [x] Add YAML config loading
+- [x] Add JSON config loading
 - [x] Add URL/spec fetcher
 - [x] Add Swagger UI discovery for common cases
 - [x] Add OpenAPI parser
@@ -17,7 +17,7 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 - [x] Add Postman collection generator
 - [x] Add Postman environment generator
 - [x] Add generated README output
-- [x] Add sample `apipack.yml`
+- [x] Add sample `apipack.json`
 - [x] Add sample OpenAPI fixture
 - [x] Add unit tests for parser
 - [ ] Add unit tests for generators
@@ -32,7 +32,7 @@ Scope anchor: `docs/spec.md` and `docs/plan.md`
 ### Slice 1 - Scaffold + CLI skeleton
 
 - Status: Done
-- Goal: Run `apipack generate --config ... --out ...` and generate a baseline README from YAML config.
+- Goal: Run `apipack generate --config ... --out ...` and generate a baseline README from JSON config.
 
 ### Slice 2 - Spec discovery and parse model
 

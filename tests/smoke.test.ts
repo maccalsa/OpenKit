@@ -12,18 +12,22 @@ describe("generateWorkspace", () => {
     const fixtureText = await readFile(fixtureSource, "utf-8");
     await writeFile(fixtureTarget, fixtureText, "utf-8");
 
-    const configPath = path.join(tempDir, "apipack.yml");
+    const configPath = path.join(tempDir, "apipack.json");
     await writeFile(
       configPath,
-      [
-        "workspace: smoke-workspace",
-        "sources:",
-        "  - name: users",
-        "    url: ./users.openapi.json",
-        "environments:",
-        "  local:",
-        "    usersUrl: http://localhost:8080"
-      ].join("\n"),
+      JSON.stringify(
+        {
+          workspace: "smoke-workspace",
+          sources: [{ name: "users", url: "./users.openapi.json" }],
+          environments: {
+            local: {
+              usersUrl: "http://localhost:8080"
+            }
+          }
+        },
+        null,
+        2
+      ),
       "utf-8"
     );
 

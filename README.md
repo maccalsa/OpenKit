@@ -30,30 +30,35 @@ npm test
 3. Generate output from the sample config:
 
 ```bash
-npm run dev -- generate --config apipack.yml --out ./generated
+npm run dev -- generate --config apipack.json --out ./generated
 ```
 
 ## Config format
 
-Use a YAML file:
+Use a JSON file:
 
-```yaml
-workspace: internal-apis
-
-sources:
-  - name: users
-    url: https://users.example.com/swagger-ui/index.html
-
-environments:
-  local:
-    usersUrl: http://localhost:8080
+```json
+{
+  "workspace": "internal-apis",
+  "sources": [
+    {
+      "name": "users",
+      "url": "https://users.example.com/swagger-ui/index.html"
+    }
+  ],
+  "environments": {
+    "local": {
+      "usersUrl": "http://localhost:8080"
+    }
+  }
+}
 ```
 
 `sources.url` accepts:
 
-- direct OpenAPI JSON/YAML URL
+- direct OpenAPI JSON URL
 - common Swagger UI URL (OpenKit attempts discovery)
-- local JSON/YAML file path (helpful for fixtures and offline usage)
+- local JSON file path (helpful for fixtures and offline usage)
 
 ## Auth handling (MVP)
 

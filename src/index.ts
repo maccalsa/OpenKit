@@ -10,7 +10,7 @@ program
   .description("Generate API workspace bundles from OpenAPI sources")
   .command("generate")
   .description("Generate an API workspace bundle")
-  .requiredOption("-c, --config <path>", "Path to config file", "apipack.yml")
+  .requiredOption("-c, --config <path>", "Path to config file", "apipack.json")
   .option("-o, --out <path>", "Output directory", "./generated")
   .action(async (options: { config: string; out: string }) => {
     await generateWorkspace(options.config, options.out);
