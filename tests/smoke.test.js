@@ -1,8 +1,9 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { generateWorkspace } from "../src/generate.js";
+import { generateWorkspace } from "../dist/generate.js";
 
 describe("generateWorkspace", () => {
   it("generates the expected output bundle from local fixture source", async () => {
@@ -51,12 +52,15 @@ describe("generateWorkspace", () => {
       "utf-8"
     );
 
-    expect(generatedReadme).toContain("# smoke-workspace Generated API Pack");
-    expect(generatedHttp).toContain("GET {{usersUrl}}/users");
-    expect(generatedHttpEnv).toContain("\"usersUrl\": \"https://dev-users.example.com\"");
-    expect(generatedHttpEnv).toContain("\"ordersUrl\": \"https://dev-orders.example.com\"");
-    expect(generatedPostman).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
-    expect(generatedPostmanEnvironment).toContain("\"key\": \"ordersUrl\"");
-    expect(generatedPostmanEnvironment).toContain("\"value\": \"https://{{env}}-orders.example.com\"");
+    assert.match(generatedReadme, /# smoke-workspace Generated API Pack/);
+    assert.match(generatedHttp, /GET \{\{usersUrl\}\}\/users/);
+    assert.match(generatedHttpEnv, /"usersUrl": "https:\/\/dev-users\.example\.com"/);
+    assert.match(generatedHttpEnv, /"ordersUrl": "https:\/\/dev-orders\.example\.com"/);
+    assert.match(
+      generatedPostman,
+      /"schema": "https:\/\/schema\.getpostman\.com\/json\/collection\/v2\.1\.0\/collection\.json"/
+    );
+    assert.match(generatedPostmanEnvironment, /"key": "ordersUrl"/);
+    assert.match(generatedPostmanEnvironment, /"value": "https:\/\/\{\{env\}\}-orders\.example\.com"/);
   });
 });

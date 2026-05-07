@@ -1,8 +1,9 @@
 import { mkdtemp, writeFile } from "node:fs/promises";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { loadConfig } from "../src/config.js";
+import { loadConfig } from "../dist/config.js";
 
 describe("loadConfig", () => {
   it("loads and validates JSON config", async () => {
@@ -30,10 +31,10 @@ describe("loadConfig", () => {
     );
 
     const config = await loadConfig(configPath);
-    expect(config.workspace).toBe("internal-apis");
-    expect(config.sources).toHaveLength(1);
-    expect(config.defaultEnv).toBe("dev");
-    expect(config.envs).toEqual(["dev", "prod"]);
-    expect(config.sources[0]?.baseUrlTemplate).toBe("https://{{env}}-users.example.com");
+    assert.equal(config.workspace, "internal-apis");
+    assert.equal(config.sources.length, 1);
+    assert.equal(config.defaultEnv, "dev");
+    assert.deepEqual(config.envs, ["dev", "prod"]);
+    assert.equal(config.sources[0]?.baseUrlTemplate, "https://{{env}}-users.example.com");
   });
 });

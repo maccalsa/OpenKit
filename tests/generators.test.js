@@ -1,15 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import {
   generateBundleReadme,
   generateIntellijEnvironment,
   generateIntellijHttp,
   generatePostmanCollection,
   generatePostmanEnvironment
-} from "../src/generators.js";
-import { ApiPackConfig, ApiSource } from "../src/config.js";
-import { ApiModel } from "../src/types.js";
+} from "../dist/generators.js";
 
-const config: ApiPackConfig = {
+const config = {
   workspace: "internal-apis",
   defaultEnv: "dev",
   envs: ["dev", "preprod", "prod"],
@@ -21,9 +20,10 @@ const config: ApiPackConfig = {
     }
   ]
 };
-const source: ApiSource = config.sources[0] as ApiSource;
 
-const model: ApiModel = {
+const source = config.sources[0];
+
+const model = {
   sourceName: "users",
   title: "Users API",
   servers: ["https://users.example.com"],
@@ -60,35 +60,35 @@ const model: ApiModel = {
 describe("generators", () => {
   it("creates IntelliJ HTTP requests with placeholders", () => {
     const output = generateIntellijHttp(model, source);
-    expect(output).toContain("GET {{usersUrl}}/users/{{id}}?expand={{expand}}");
-    expect(output).toContain("Authorization: Bearer {{token}}");
+    assert.match(output, /GET \{\{usersUrl\}\}\/users\/\{\{id\}\}\?expand=\{\{expand\}\}/);
+    assert.match(output, /Authorization: Bearer \{\{token\}\}/);
   });
 
   it("creates IntelliJ environment JSON", () => {
     const output = generateIntellijEnvironment(config, [model]);
-    expect(output).toContain("\"dev\"");
-    expect(output).toContain("\"usersUrl\": \"https://dev-users.example.com\"");
-    expect(output).toContain("\"preprod\"");
-    expect(output).toContain("\"usersUrl\": \"https://preprod-users.example.com\"");
+    assert.match(output, /"dev"/);
+    assert.match(output, /"usersUrl": "https:\/\/dev-users\.example\.com"/);
+    assert.match(output, /"preprod"/);
+    assert.match(output, /"usersUrl": "https:\/\/preprod-users\.example\.com"/);
   });
 
   it("creates Postman collection JSON", () => {
     const output = generatePostmanCollection(model, source);
-    expect(output).toContain("\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"");
-    expect(output).toContain("\"raw\": \"{{usersUrl}}/users/{{id}}?expand={{expand}}\"");
+    assert.match(output, /"schema": "https:\/\/schema\.getpostman\.com\/json\/collection\/v2\.1\.0\/collection\.json"/);
+    assert.match(output, /"raw": "\{\{usersUrl\}\}\/users\/\{\{id\}\}\?expand=\{\{expand\}\}"/);
   });
 
   it("creates Postman environment with auth variables", () => {
     const output = generatePostmanEnvironment(config, [model]);
-    expect(output).toContain("\"name\": \"internal-apis.environment\"");
-    expect(output).toContain("\"key\": \"token\"");
-    expect(output).toContain("\"key\": \"usersUrl\"");
-    expect(output).toContain("\"value\": \"https://{{env}}-users.example.com\"");
+    assert.match(output, /"name": "internal-apis\.environment"/);
+    assert.match(output, /"key": "token"/);
+    assert.match(output, /"key": "usersUrl"/);
+    assert.match(output, /"value": "https:\/\/\{\{env\}\}-users\.example\.com"/);
   });
 
   it("creates generated README content", () => {
     const output = generateBundleReadme(config, [model]);
-    expect(output).toContain("# internal-apis Generated API Pack");
-    expect(output).toContain("- users (1 endpoints)");
+    assert.match(output, /# internal-apis Generated API Pack/);
+    assert.match(output, /- users \(1 endpoints\)/);
   });
 });
