@@ -7,7 +7,7 @@
     "apipack": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
     "test": "vitest run",
     "dev": "tsx src/index.ts"
   },

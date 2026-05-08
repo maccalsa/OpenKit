@@ -1,7 +1,7 @@
 {
   "workspace": "internal-apis",
   "defaultEnv": "dev",
-  "tokenCommand": "./script.sh {{env}}",
+  "tokenCommand": "~/script.sh {{env}}",
   "envs": ["dev", "preprod", "prod"],
   "sources": [
     {
