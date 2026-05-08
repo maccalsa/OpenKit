@@ -1,5 +1,5 @@
 import { ApiPackConfig, ApiSource } from "./config.js";
-import { ApiEndpoint, ApiModel } from "./types.js";
+import { ApiEndpoint, ApiModel, AuthScheme } from "./types.js";
 
 interface PostmanVariable {
   key: string;
@@ -30,12 +30,23 @@ function buildRequestUrl(endpoint: ApiEndpoint, source: ApiSource): string {
   return `{{${baseKey}}}${pathValue}${querySuffix}`;
 }
 
-function buildAuthHeaders(endpoint: ApiEndpoint): string[] {
+function describeEndpointAuth(endpoint: ApiEndpoint, authSchemes: AuthScheme[]): string[] {
+  const authSchemeByKey = new Map(authSchemes.map((scheme) => [scheme.key, scheme]));
+  return endpoint.authSchemes.map((authName) => {
+    const authScheme = authSchemeByKey.get(authName);
+    return [authName, authScheme?.type, authScheme?.scheme, authScheme?.in]
+      .filter((part): part is string => part !== undefined)
+      .join(":")
+      .toLowerCase();
+  });
+}
+
+function buildAuthHeaders(endpoint: ApiEndpoint, authSchemes: AuthScheme[]): string[] {
   if (endpoint.authSchemes.length === 0) {
     return [];
   }
 
-  const lowerAuth = endpoint.authSchemes.map((auth) => auth.toLowerCase());
+  const lowerAuth = describeEndpointAuth(endpoint, authSchemes);
   if (lowerAuth.some((auth) => auth.includes("bearer"))) {
     return ["Authorization: Bearer {{token}}"];
   }
@@ -58,7 +69,7 @@ export function generateIntellijHttp(model: ApiModel, source: ApiSource): string
     lines.push(`### ${title}`);
     lines.push(`${endpoint.method.toUpperCase()} ${buildRequestUrl(endpoint, source)}`);
     lines.push("Accept: application/json");
-    lines.push(...buildAuthHeaders(endpoint));
+    lines.push(...buildAuthHeaders(endpoint, model.authSchemes));
 
     if (endpoint.requestBodyExample !== undefined) {
       lines.push("Content-Type: application/json");
@@ -146,7 +157,7 @@ function toPostmanItems(model: ApiModel, source: ApiSource) {
         key: "Accept",
         value: "application/json"
       },
-      ...buildAuthHeaders(endpoint).map((line) => {
+      ...buildAuthHeaders(endpoint, model.authSchemes).map((line) => {
         const [key, ...rest] = line.split(":");
         return {
           key: key.trim(),
@@ -249,7 +260,14 @@ export function generateBundleReadme(config: ApiPackConfig, models: ApiModel[]):
     "- Bearer: `{{token}}`",
     "- API key: `{{apiKey}}`",
     "- Basic auth: `{{username}}`, `{{password}}`, `{{basicAuthToken}}`",
-    "- OAuth/custom: TODO placeholders are emitted in request headers where needed."
+    "- OAuth/custom: TODO placeholders are emitted in request headers where needed.",
+    "",
+    "## Refresh bearer tokens",
+    "- Configure `tokenCommand` in `apipack.json` and run `apipack regenToken --env <env>` to update `intellij/http-client.private.env.json`.",
+    "- The token command can be any executable or shell command that prints the bearer token to stdout.",
+    "",
+    "## Link IntelliJ HTTP files",
+    "- Run `apipack addlink ./http` to create a symlink from `./http` to the generated `intellij` folder."
   ];
 
   return `${lines.join("\n")}\n`;

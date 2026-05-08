@@ -64,6 +64,34 @@ describe("generators", () => {
     expect(output).toContain("Authorization: Bearer {{token}}");
   });
 
+  it("resolves bearer auth from security scheme definitions", () => {
+    const output = generateIntellijHttp(
+      {
+        ...model,
+        authSchemes: [
+          {
+            key: "hmppsAuth",
+            type: "http",
+            scheme: "bearer"
+          }
+        ],
+        endpoints: [
+          {
+            path: "/hmpps/{id}",
+            method: "put",
+            operationId: "updateHmppsThing",
+            parameters: [],
+            authSchemes: ["hmppsAuth"]
+          }
+        ]
+      },
+      source
+    );
+
+    expect(output).toContain("Authorization: Bearer {{token}}");
+    expect(output).not.toContain("# TODO: configure auth header");
+  });
+
   it("creates IntelliJ environment JSON", () => {
     const output = generateIntellijEnvironment(config, [model]);
     expect(output).toContain("\"dev\"");

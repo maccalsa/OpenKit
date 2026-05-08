@@ -3,3 +3,5 @@ dist
 generated
 coverage
 .DS_Store
+http-client.private.env.json
+**/http-client.private.env.json

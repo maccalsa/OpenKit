@@ -14,6 +14,7 @@ describe("loadConfig", () => {
         {
           workspace: "internal-apis",
           defaultEnv: "dev",
+          tokenCommand: "./script.sh {{env}}",
           envs: ["dev", "prod"],
           sources: [
             {
@@ -33,6 +34,7 @@ describe("loadConfig", () => {
     expect(config.workspace).toBe("internal-apis");
     expect(config.sources).toHaveLength(1);
     expect(config.defaultEnv).toBe("dev");
+    expect(config.tokenCommand).toBe("./script.sh {{env}}");
     expect(config.envs).toEqual(["dev", "prod"]);
     expect(config.sources[0]?.baseUrlTemplate).toBe("https://{{env}}-users.example.com");
   });

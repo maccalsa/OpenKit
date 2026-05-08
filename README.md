@@ -41,6 +41,7 @@ Use a JSON file:
 {
   "workspace": "internal-apis",
   "defaultEnv": "dev",
+  "tokenCommand": "./script.sh {{env}}",
   "envs": ["dev", "preprod", "prod"],
   "sources": [
     {
@@ -66,3 +67,23 @@ OpenKit reads security schemes and emits practical placeholders:
 - API key -> `{{apiKey}}`
 - Basic -> `{{username}}`, `{{password}}`, `{{basicAuthToken}}`
 - OAuth/custom -> TODO placeholder notes in request templates
+
+## Refresh IntelliJ bearer tokens
+
+Use `regenToken` to refresh `generated/intellij/http-client.private.env.json` from any local command that prints a token to stdout:
+
+```bash
+npm run dev -- regenToken --env dev
+```
+
+OpenKit reads `tokenCommand` from `apipack.json`. You can override it for one run with `--token-command "./other-token-command {{env}}"`. IntelliJ merges `http-client.private.env.json` with the public `http-client.env.json`, so generated requests can keep using `Authorization: Bearer {{token}}` without committing secrets.
+
+## Link IntelliJ HTTP files
+
+Use `addlink` to create a symlink from a convenient project path to `generated/intellij`:
+
+```bash
+npm run dev -- addlink ./http
+```
+
+Open `./http/*.http` in IntelliJ. The linked directory keeps requests, `http-client.env.json`, and `http-client.private.env.json` together, so environment selection still works.

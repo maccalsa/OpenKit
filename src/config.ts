@@ -11,6 +11,7 @@ const sourceSchema = z.object({
 const configSchema = z.object({
   workspace: z.string().min(1),
   defaultEnv: z.string().min(1).default("dev"),
+  tokenCommand: z.string().min(1).optional(),
   envs: z.array(z.string().min(1)).nonempty().default(["dev"]),
   sources: z.array(sourceSchema).min(1)
 });
