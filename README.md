@@ -20,16 +20,17 @@ Running OpenKit creates:
 npm install
 ```
 
-2. Run tests:
+2. Build and test:
 
 ```bash
+npm run build
 npm test
 ```
 
 3. Generate output from the sample config:
 
 ```bash
-node dist/index.js generate --config apipack.json --out ./generated
+npm run dev -- generate --config apipack.json --out ./generated
 ```
 
 ## Config format

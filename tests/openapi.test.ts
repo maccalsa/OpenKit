@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { describe, it } from "node:test";
-import assert from "node:assert/strict";
 import path from "node:path";
-import { discoverSpecUrl, fetchSpecDocument, parseOpenApiDocument } from "../dist/openapi.js";
+import { describe, expect, it } from "vitest";
+import { discoverSpecUrl, fetchSpecDocument, parseOpenApiDocument } from "../src/openapi.js";
 
-function createJsonResponse(payload) {
+function createJsonResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), {
     status: 200,
     headers: {
@@ -16,12 +15,12 @@ function createJsonResponse(payload) {
 describe("discoverSpecUrl", () => {
   it("returns direct spec URLs without discovery", async () => {
     const specUrl = await discoverSpecUrl("https://users.example.com/v3/api-docs");
-    assert.equal(specUrl, "https://users.example.com/v3/api-docs");
+    expect(specUrl).toBe("https://users.example.com/v3/api-docs");
   });
 
   it("extracts spec URL from Swagger UI HTML", async () => {
-    const calls = [];
-    const fetchMock = async (url) => {
+    const calls: string[] = [];
+    const fetchMock = async (url: string): Promise<Response> => {
       calls.push(url);
       return new Response('<script>window.ui = SwaggerUIBundle({ url: "/v3/api-docs" })</script>', {
         status: 200,
@@ -32,8 +31,8 @@ describe("discoverSpecUrl", () => {
     };
 
     const discovered = await discoverSpecUrl("https://users.example.com/swagger-ui/index.html", fetchMock);
-    assert.equal(discovered, "https://users.example.com/v3/api-docs");
-    assert.equal(calls.length, 1);
+    expect(discovered).toBe("https://users.example.com/v3/api-docs");
+    expect(calls).toHaveLength(1);
   });
 });
 
@@ -41,20 +40,20 @@ describe("parseOpenApiDocument", () => {
   it("creates internal endpoint model and auth metadata", async () => {
     const fixturePath = path.resolve("fixtures/users.openapi.json");
     const fixtureText = await readFile(fixturePath, "utf-8");
-    const fixture = JSON.parse(fixtureText);
+    const fixture = JSON.parse(fixtureText) as unknown;
 
     const model = parseOpenApiDocument(fixture, "users");
-    assert.equal(model.title, "Users API");
-    assert.equal(model.endpoints.length, 2);
-    assert.ok(model.authSchemes.map((scheme) => scheme.key).includes("bearerAuth"));
+    expect(model.title).toBe("Users API");
+    expect(model.endpoints).toHaveLength(2);
+    expect(model.authSchemes.map((scheme) => scheme.key)).toContain("bearerAuth");
 
     const createUser = model.endpoints.find((endpoint) => endpoint.operationId === "createUser");
-    assert.deepEqual(createUser?.requestBodyExample, { email: "person@example.com", name: "Person" });
-    assert.deepEqual(createUser?.authSchemes, ["bearerAuth"]);
+    expect(createUser?.requestBodyExample).toEqual({ email: "person@example.com", name: "Person" });
+    expect(createUser?.authSchemes).toEqual(["bearerAuth"]);
   });
 
   it("rejects non OpenAPI 3 specs", () => {
-    assert.throws(() =>
+    expect(() =>
       parseOpenApiDocument(
         {
           openapi: "2.0",
@@ -65,7 +64,7 @@ describe("parseOpenApiDocument", () => {
         },
         "legacy"
       )
-    , /Only OpenAPI 3\.x is supported/);
+    ).toThrow("Only OpenAPI 3.x is supported");
   });
 
   it("includes path item parameters in endpoint model", () => {
@@ -91,7 +90,7 @@ describe("parseOpenApiDocument", () => {
     };
 
     const model = parseOpenApiDocument(doc, "items");
-    assert.deepEqual(model.endpoints[0]?.parameters, [
+    expect(model.endpoints[0]?.parameters).toEqual([
       {
         name: "id",
         in: "path",
@@ -113,7 +112,7 @@ describe("fetchSpecDocument", () => {
       });
 
     const document = await fetchSpecDocument("https://json.example.com/openapi.json", fetchMock);
-    assert.equal(document.openapi, "3.0.3");
+    expect((document as Record<string, unknown>).openapi).toBe("3.0.3");
   });
 
   it("rejects non-JSON spec responses", async () => {
@@ -125,9 +124,8 @@ describe("fetchSpecDocument", () => {
         }
       });
 
-    await assert.rejects(
-      () => fetchSpecDocument("https://yaml.example.com/openapi.yaml", fetchMock),
-      /Expected JSON/
+    await expect(fetchSpecDocument("https://yaml.example.com/openapi.yaml", fetchMock)).rejects.toThrow(
+      "Expected JSON"
     );
   });
 });
